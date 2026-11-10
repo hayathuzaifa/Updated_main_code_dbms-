@@ -1,0 +1,664 @@
+-- ==============================================================
+-- 1. SUBJECTPAPER188
+-- ==============================================================
+CREATE TABLE SUBJECTPAPER188 (
+    PAPER_CODE VARCHAR2(20 BYTE),
+    PAPER_NAME VARCHAR2(100 BYTE),
+    CREDIT     NUMBER(3, 0),
+    CONSTRAINT CONS_PKEY_PAPER_CODE PRIMARY KEY (PAPER_CODE)
+);
+
+-- ==============================================================
+-- 2. DEPARTMENT188
+-- (Note: Circular Foreign Key CONS_FKEY_HEAD_OF_DEPT is added after
+--  FACULTY188 is created, because FACULTY188 does not exist yet)
+-- ==============================================================
+CREATE TABLE DEPARTMENT188 (
+    DEPARTMENT_ID VARCHAR2(20 BYTE),
+    DNAME         VARCHAR2(100 BYTE) CONSTRAINT CONS_NNULL_DNAME NOT NULL,
+    HEAD_ID       VARCHAR2(20 BYTE),
+    CONSTRAINT CONS_PKEY_DID PRIMARY KEY (DEPARTMENT_ID),
+    CONSTRAINT CONS_UNIQUE_DNAME UNIQUE (DNAME)
+);
+
+-- ==============================================================
+-- 3. FACULTY188
+-- ==============================================================
+CREATE TABLE FACULTY188 (
+    EMP_ID       VARCHAR2(20 BYTE),
+    SALARY       NUMBER(5, 0),
+    MOBILE       NUMBER(10, 0) CONSTRAINT CONS_NNULL_MOB NOT NULL,
+    FACULTY_NAME VARCHAR2(40 BYTE) CONSTRAINT CONS_NNULL_FAC NOT NULL,
+    UNDER_DEPT   VARCHAR2(20 BYTE),
+    SUPERVISOR   VARCHAR2(20 BYTE),
+    JOINING_DATE DATE,
+    DOB          DATE,
+    CONSTRAINT CONS_PKEY_EMPID PRIMARY KEY (EMP_ID),
+    CONSTRAINT CONS_CKEY_FAC_NAME UNIQUE (MOBILE),
+    CONSTRAINT CONS_FKEY_IN_DEPT FOREIGN KEY (UNDER_DEPT)
+        REFERENCES DEPARTMENT188 (DEPARTMENT_ID),
+    CONSTRAINT CONS_FKEY_SUPERVISOR FOREIGN KEY (SUPERVISOR)
+        REFERENCES FACULTY188 (EMP_ID)
+);
+
+-- Add the circular Foreign Key on DEPARTMENT188 referencing FACULTY188
+ALTER TABLE DEPARTMENT188
+    ADD CONSTRAINT CONS_FKEY_HEAD_OF_DEPT FOREIGN KEY (HEAD_ID)
+        REFERENCES FACULTY188 (EMP_ID);
+
+-- ==============================================================
+-- 4. COURSE188
+-- ==============================================================
+CREATE TABLE COURSE188 (
+    CID           VARCHAR2(30 BYTE),
+    CNAME         VARCHAR2(100 BYTE) CONSTRAINT CONS_NNULL_CNAME NOT NULL,
+    DISCIPLINE    VARCHAR2(100 BYTE),
+    OFFERING_DEPT VARCHAR2(20 BYTE),
+    CONSTRAINT CONS_PKEY_CID PRIMARY KEY (CID),
+    CONSTRAINT CONS_UKEY_CNAME UNIQUE (CNAME),
+    CONSTRAINT CONS_UKEY_DICI UNIQUE (DISCIPLINE),
+    CONSTRAINT CONS_FKEY_COURSE_DEPT_DID FOREIGN KEY (OFFERING_DEPT)
+        REFERENCES DEPARTMENT188 (DEPARTMENT_ID)
+);
+
+-- ==============================================================
+-- 5. SECTION188
+-- ==============================================================
+CREATE TABLE SECTION188 (
+    SECTION_ID      VARCHAR2(50 BYTE),
+    BATCHES         NUMBER(1, 0) CONSTRAINT CONS_NNULL_BACHES_STUD NOT NULL,
+    STUDYING_COURSE VARCHAR2(30 BYTE),
+    CONSTRAINT CONS_PKEY_ID PRIMARY KEY (SECTION_ID),
+    CONSTRAINT CONS_FKEY_SEC_COURSE_CID FOREIGN KEY (STUDYING_COURSE)
+        REFERENCES COURSE188 (CID)
+);
+
+-- ==============================================================
+-- 6. CONTAINS188
+-- ==============================================================
+CREATE TABLE CONTAINS188 (
+    COURSE_ID VARCHAR2(30 BYTE),
+    PAPER_ID  VARCHAR2(20 BYTE),
+    SEMESTER  NUMBER(1, 0) CONSTRAINT CONS_NNULL_SEM_ESTER NOT NULL,
+    CONSTRAINT CONS_PKEY_COURSE PRIMARY KEY (COURSE_ID, PAPER_ID),
+    CONSTRAINT CONS_FKEY_CON_COURSE FOREIGN KEY (COURSE_ID)
+        REFERENCES COURSE188 (CID),
+    CONSTRAINT CONS_FKEY_CON_PAPERS FOREIGN KEY (PAPER_ID)
+        REFERENCES SUBJECTPAPER188 (PAPER_CODE)
+);
+
+-- ==============================================================
+-- 7. TEACHES188
+-- ==============================================================
+CREATE TABLE TEACHES188 (
+    TEACH_BY_FAC VARCHAR2(20 BYTE),
+    TEACHING_SUB VARCHAR2(20 BYTE),
+    TSESSION     NUMBER(4, 0) CONSTRAINT CONS_NNULL_T_SESSION NOT NULL,
+    CONSTRAINT CONS_PKEY_FAC_SUB PRIMARY KEY (TEACH_BY_FAC, TEACHING_SUB),
+    CONSTRAINT CONS_FKEY_T_FAC FOREIGN KEY (TEACH_BY_FAC)
+        REFERENCES FACULTY188 (EMP_ID),
+    CONSTRAINT CONS_FKEY_T_SUB_PAP FOREIGN KEY (TEACHING_SUB)
+        REFERENCES SUBJECTPAPER188 (PAPER_CODE)
+);
+
+-- ==============================================================
+-- 8. INSTRUCTS188
+-- ==============================================================
+CREATE TABLE INSTRUCTS188 (
+    INSTRUCT_FAC VARCHAR2(20 BYTE),
+    INSTRUCT_SEC VARCHAR2(20 BYTE),
+    ISESSION     NUMBER(4, 0) CONSTRAINT CONS_NNULL_SESSION NOT NULL,
+    CONSTRAINT CONS_PKEY_FAC_SECTION PRIMARY KEY (INSTRUCT_FAC, INSTRUCT_SEC),
+    CONSTRAINT CONS_INC_FAC FOREIGN KEY (INSTRUCT_FAC)
+        REFERENCES FACULTY188 (EMP_ID),
+    CONSTRAINT CONS_INC_SEC FOREIGN KEY (INSTRUCT_SEC)
+        REFERENCES SECTION188 (SECTION_ID)
+);
+
+-- ==============================================================
+-- 9. STUDENT188
+-- ==============================================================
+CREATE TABLE STUDENT188 (
+    SNAME            VARCHAR2(80 BYTE),
+    DOB              DATE CONSTRAINT CONS_NNULL_DOB_STUDENT NOT NULL,
+    ROLL             NUMBER(2, 0),
+    EMAIL            VARCHAR2(100 BYTE) CONSTRAINT CONS_NNULL_EMAILS_STUDENT NOT NULL,
+    MOB              NUMBER(10, 0) CONSTRAINT CONS_NULL_MOB_NO NOT NULL,
+    ADD_PINCODE      NUMBER(7, 0),
+    ADD_CITY         VARCHAR2(100 BYTE),
+    ADD_HOUSENO      NUMBER(2, 0),
+    ENROLLED_COURSE  VARCHAR2(30 BYTE),
+    UNDER_SECID      VARCHAR2(50 BYTE),
+    ENROLLED_SESSION NUMBER(4, 0),
+    CONSTRAINT CONS_PKEY_ROLL PRIMARY KEY (ROLL),
+    CONSTRAINT CONS_CKEY_MOB_EMAIL UNIQUE (EMAIL, MOB),
+    CONSTRAINT CONS_CKEY_NAME_ADD UNIQUE (SNAME, ADD_HOUSENO, ADD_CITY, ADD_PINCODE),
+    CONSTRAINT CONS_FKEY_COURSE_ID FOREIGN KEY (ENROLLED_COURSE)
+        REFERENCES COURSE188 (CID),
+    CONSTRAINT CONS_FKEY_SEC_ID FOREIGN KEY (UNDER_SECID)
+        REFERENCES SECTION188 (SECTION_ID)
+);
+
+-- ==============================================================
+-- 10. EXAM188
+-- ==============================================================
+CREATE TABLE EXAM188 (
+    PAPER_CODE           VARCHAR2(20 BYTE),
+    SESSIONS             VARCHAR2(10 BYTE),
+    MARKS                NUMBER(3, 0) CONSTRAINT CONS_NNULL_MARKS NOT NULL,
+    PERFORMED_BY_STUDENT NUMBER(2, 0),
+    CONSTRAINT CONS_PKEY_CODE_SESSION_ROLL PRIMARY KEY (PAPER_CODE, SESSIONS, PERFORMED_BY_STUDENT),
+    CONSTRAINT CONS_FKEY_PCODE FOREIGN KEY (PAPER_CODE)
+        REFERENCES SUBJECTPAPER188 (PAPER_CODE),
+    CONSTRAINT CONS_FKEY_EXAM_PER_STU FOREIGN KEY (PERFORMED_BY_STUDENT)
+        REFERENCES STUDENT188 (ROLL)
+);
+
+SELECT
+    C.TABLE_NAME,
+    CC.COLUMN_NAME,
+    C.CONSTRAINT_NAME,
+    C.CONSTRAINT_TYPE,
+    C.R_CONSTRAINT_NAME,
+    C.SEARCH_CONDITION
+FROM USER_CONSTRAINTS C
+JOIN USER_CONS_COLUMNS CC
+    ON C.CONSTRAINT_NAME = CC.CONSTRAINT_NAME
+   AND C.TABLE_NAME = CC.TABLE_NAME
+ORDER BY C.TABLE_NAME, C.CONSTRAINT_NAME, CC.POSITION;
+
+//insert into course188 values ('01','BTECH','CSE','1');
+//insert into course188 values ('01','BTECH','CSE','1');
+
+
+<bhai yha se isnert kr rhe h>
+-- ==============================================================
+-- 1. SUBJECTPAPER188 (Independent Parent)
+-- ==============================================================
+INSERT INTO SUBJECTPAPER188 (PAPER_CODE, PAPER_NAME, CREDIT) 
+VALUES ('CS501', 'Machine Learning', 4);
+
+INSERT INTO SUBJECTPAPER188 (PAPER_CODE, PAPER_NAME, CREDIT) 
+VALUES ('CS502', 'Database Management Systems', 4);
+
+INSERT INTO SUBJECTPAPER188 (PAPER_CODE, PAPER_NAME, CREDIT) 
+VALUES ('CS503', 'Operating Systems', 3);
+
+INSERT INTO SUBJECTPAPER188 (PAPER_CODE, PAPER_NAME, CREDIT) 
+VALUES ('EC101', 'Digital Electronics', 4);
+
+SET DEFINE OFF;
+-- ==============================================================
+-- 2. DEPARTMENT188 (Insert with HEAD_ID = NULL to break circular FK)
+-- ==============================================================
+INSERT INTO DEPARTMENT188 (DEPARTMENT_ID, DNAME, HEAD_ID) 
+VALUES ('D01', 'Computer Science and Engineering', NULL);
+
+INSERT INTO DEPARTMENT188 (DEPARTMENT_ID, DNAME, HEAD_ID) 
+VALUES ('D02', 'Electronics and Communication', NULL);
+
+INSERT INTO DEPARTMENT188 (DEPARTMENT_ID, DNAME, HEAD_ID) 
+VALUES ('D03', 'Mechanical Engineering', NULL);
+
+-- ==============================================================
+-- 3. FACULTY188
+-- (Salaries range across 11 distinct levels to test Ranks 4th high/low & 3rd in dept)
+-- ==============================================================
+-- Top HOD of D01 (Supervisor = NULL)
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F01', 60000, 9830111101, 'Dr. Amit Sen', 'D01', NULL, TO_DATE('10-02-2015','DD-MM-YYYY'), TO_DATE('01-08-1975','DD-MM-YYYY'));
+
+-- Faculty in D01 supervised by F01 (Same dept, 1st) - 4th Highest Salary Overall
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F02', 50000, 9830111102, 'Prof. Priya Das', 'D01', 'F01', TO_DATE('15-07-2017','DD-MM-YYYY'), TO_DATE('12-05-1980','DD-MM-YYYY'));
+
+-- Faculty in D01 supervised by F01 (Same dept, 2nd) - 3rd Highest in D01
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F03', 40000, 9830111103, 'Prof. Rahul Sharma', 'D01', 'F01', TO_DATE('01-01-2019','DD-MM-YYYY'), TO_DATE('14-03-1985','DD-MM-YYYY'));
+
+-- Faculty in D01 supervised by F02
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F04', 30000, 9830111104, 'Prof. Ananya Roy', 'D01', 'F02', TO_DATE('10-08-2021','DD-MM-YYYY'), TO_DATE('20-11-1990','DD-MM-YYYY'));
+
+-- HOD of D02
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F05', 55000, 9830111105, 'Dr. Bikram Ghosh', 'D02', NULL, TO_DATE('05-09-2016','DD-MM-YYYY'), TO_DATE('08-09-1977','DD-MM-YYYY'));
+
+-- Faculty in D02 supervised by F01 (Outside F01's dept, tests Query d(ii))
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F06', 45000, 9830111106, 'Prof. Sneha Paul', 'D02', 'F01', TO_DATE('12-12-2018','DD-MM-YYYY'), TO_DATE('03-04-1983','DD-MM-YYYY'));
+
+-- Faculty in D02 supervised by F05 - 3rd Highest in D02 & 4th Lowest Overall
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F07', 35000, 9830111107, 'Prof. Sourav Dutta', 'D02', 'F05', TO_DATE('18-03-2020','DD-MM-YYYY'), TO_DATE('19-06-1988','DD-MM-YYYY'));
+
+-- Faculty in D02 supervised by F05
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F08', 25000, 9830111108, 'Prof. Tanmoy Kar', 'D02', 'F05', TO_DATE('22-11-2022','DD-MM-YYYY'), TO_DATE('25-12-1992','DD-MM-YYYY'));
+
+-- HOD of D03
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F09', 52000, 9830111109, 'Dr. Debashis Guha', 'D03', NULL, TO_DATE('11-04-2016','DD-MM-YYYY'), TO_DATE('15-01-1976','DD-MM-YYYY'));
+
+-- Faculty in D03 supervised by F09
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F10', 42000, 9830111110, 'Prof. Rina Bose', 'D03', 'F09', TO_DATE('14-06-2019','DD-MM-YYYY'), TO_DATE('28-07-1986','DD-MM-YYYY'));
+
+-- Faculty in D03 supervised by F09 - 3rd Highest in D03
+INSERT INTO FACULTY188 (EMP_ID, SALARY, MOBILE, FACULTY_NAME, UNDER_DEPT, SUPERVISOR, JOINING_DATE, DOB)
+VALUES ('F11', 32000, 9830111111, 'Prof. Kuntal Banerjee', 'D03', 'F09', TO_DATE('01-09-2021','DD-MM-YYYY'), TO_DATE('09-10-1990','DD-MM-YYYY'));
+
+-- ==============================================================
+-- 4. UPDATE DEPARTMENT188 (Assign HODs now that Faculty exist)
+-- ==============================================================
+UPDATE DEPARTMENT188 SET HEAD_ID = 'F01' WHERE DEPARTMENT_ID = 'D01';
+UPDATE DEPARTMENT188 SET HEAD_ID = 'F05' WHERE DEPARTMENT_ID = 'D02';
+UPDATE DEPARTMENT188 SET HEAD_ID = 'F09' WHERE DEPARTMENT_ID = 'D03';
+
+-- ==============================================================
+-- 5. COURSE188
+-- (Note: 'BTECH' and 'btech' satisfy UNIQUE(CNAME) while UPPER matches Query e(ii))
+-- ==============================================================
+INSERT INTO COURSE188 (CID, CNAME, DISCIPLINE, OFFERING_DEPT)
+VALUES ('C01', 'BTECH', 'CSE', 'D01');
+
+INSERT INTO COURSE188 (CID, CNAME, DISCIPLINE, OFFERING_DEPT)
+VALUES ('C02', 'btech', 'IT', 'D01');
+
+INSERT INTO COURSE188 (CID, CNAME, DISCIPLINE, OFFERING_DEPT)
+VALUES ('C03', 'MTECH', 'AI', 'D01');
+
+INSERT INTO COURSE188 (CID, CNAME, DISCIPLINE, OFFERING_DEPT)
+VALUES ('C04', 'mtech', 'VLSI', 'D02');
+
+-- ==============================================================
+-- 6. SECTION188 (Child of Course)
+-- ==============================================================
+INSERT INTO SECTION188 (SECTION_ID, BATCHES, STUDYING_COURSE)
+VALUES ('SEC_CSE_5', 2, 'C01');
+
+INSERT INTO SECTION188 (SECTION_ID, BATCHES, STUDYING_COURSE)
+VALUES ('SEC_ECE_1', 1, 'C04');
+
+-- ==============================================================
+-- 7. CONTAINS188 (Bridge: Course & SubjectPaper)
+-- ==============================================================
+INSERT INTO CONTAINS188 (COURSE_ID, PAPER_ID, SEMESTER)
+VALUES ('C01', 'CS501', 5);
+
+INSERT INTO CONTAINS188 (COURSE_ID, PAPER_ID, SEMESTER)
+VALUES ('C01', 'CS502', 5);
+
+INSERT INTO CONTAINS188 (COURSE_ID, PAPER_ID, SEMESTER)
+VALUES ('C04', 'EC101', 1);
+
+-- ==============================================================
+-- 8. TEACHES188 (Bridge: Faculty & SubjectPaper)
+-- ==============================================================
+INSERT INTO TEACHES188 (TEACH_BY_FAC, TEACHING_SUB, TSESSION)
+VALUES ('F01', 'CS501', 2026);
+
+INSERT INTO TEACHES188 (TEACH_BY_FAC, TEACHING_SUB, TSESSION)
+VALUES ('F02', 'CS502', 2026);
+
+INSERT INTO TEACHES188 (TEACH_BY_FAC, TEACHING_SUB, TSESSION)
+VALUES ('F05', 'EC101', 2026);
+
+-- ==============================================================
+-- 9. INSTRUCTS188 (Bridge: Faculty & Section)
+-- ==============================================================
+INSERT INTO INSTRUCTS188 (INSTRUCT_FAC, INSTRUCT_SEC, ISESSION)
+VALUES ('F01', 'SEC_CSE_5', 2026);
+
+INSERT INTO INSTRUCTS188 (INSTRUCT_FAC, INSTRUCT_SEC, ISESSION)
+VALUES ('F05', 'SEC_ECE_1', 2026);
+
+-- ==============================================================
+-- 10. STUDENT188 (All 11 columns populated)
+-- ==============================================================
+INSERT INTO STUDENT188 (
+    SNAME, DOB, ROLL, EMAIL, MOB, 
+    ADD_PINCODE, ADD_CITY, ADD_HOUSENO, 
+    ENROLLED_COURSE, UNDER_SECID, ENROLLED_SESSION
+) VALUES (
+    'Md Huzaifa Hayat', TO_DATE('25-10-2002', 'DD-MM-YYYY'), 10, 
+    'huzaifa@example.com', 9876543210, 
+    700001, 'Kolkata', 12, 
+    'C01', 'SEC_CSE_5', 2026
+);
+
+INSERT INTO STUDENT188 (
+    SNAME, DOB, ROLL, EMAIL, MOB, 
+    ADD_PINCODE, ADD_CITY, ADD_HOUSENO, 
+    ENROLLED_COURSE, UNDER_SECID, ENROLLED_SESSION
+) VALUES (
+    'Aritra Sen', TO_DATE('15-05-2002', 'DD-MM-YYYY'), 11, 
+    'aritra@example.com', 9876543211, 
+    700002, 'Kolkata', 15, 
+    'C01', 'SEC_CSE_5', 2026
+);
+
+INSERT INTO STUDENT188 (
+    SNAME, DOB, ROLL, EMAIL, MOB, 
+    ADD_PINCODE, ADD_CITY, ADD_HOUSENO, 
+    ENROLLED_COURSE, UNDER_SECID, ENROLLED_SESSION
+) VALUES (
+    'Debjyoti Ghosh', TO_DATE('20-08-2002', 'DD-MM-YYYY'), 12, 
+    'debjyoti@example.com', 9876543212, 
+    711101, 'Howrah', 20, 
+    'C01', 'SEC_CSE_5', 2026
+);
+
+-- ==============================================================
+-- 11. EXAM188
+-- (Dynamically uses EXTRACT(YEAR FROM SYSDATE) to guarantee match with Query f)
+-- ==============================================================
+-- Student 10 (Topper: 92 + 95 = 187)
+INSERT INTO EXAM188 (PAPER_CODE, SESSIONS, MARKS, PERFORMED_BY_STUDENT)
+VALUES ('CS501', TO_CHAR(EXTRACT(YEAR FROM SYSDATE)), 92, 10);
+
+INSERT INTO EXAM188 (PAPER_CODE, SESSIONS, MARKS, PERFORMED_BY_STUDENT)
+VALUES ('CS502', TO_CHAR(EXTRACT(YEAR FROM SYSDATE)), 95, 10);
+
+-- Student 11 (2nd Rank: 85 + 88 = 173)
+INSERT INTO EXAM188 (PAPER_CODE, SESSIONS, MARKS, PERFORMED_BY_STUDENT)
+VALUES ('CS501', TO_CHAR(EXTRACT(YEAR FROM SYSDATE)), 85, 11);
+
+INSERT INTO EXAM188 (PAPER_CODE, SESSIONS, MARKS, PERFORMED_BY_STUDENT)
+VALUES ('CS502', TO_CHAR(EXTRACT(YEAR FROM SYSDATE)), 88, 11);
+
+-- Student 12 (3rd Rank: 78 + 80 = 158)
+INSERT INTO EXAM188 (PAPER_CODE, SESSIONS, MARKS, PERFORMED_BY_STUDENT)
+VALUES ('CS501', TO_CHAR(EXTRACT(YEAR FROM SYSDATE)), 78, 12);
+
+INSERT INTO EXAM188 (PAPER_CODE, SESSIONS, MARKS, PERFORMED_BY_STUDENT)
+VALUES ('CS502', TO_CHAR(EXTRACT(YEAR FROM SYSDATE)), 80, 12);
+
+-- Commit transaction
+COMMIT;
+
+
+
+SELECT 
+    d.DEPARTMENT_ID,
+    d.DNAME,
+    MAX(f.SALARY) AS maximum_SALARY, 
+    AVG(f.SALARY) AS average_SALARY,
+    MIN(f.SALARY) AS minimum_SALARY
+FROM department188 d
+JOIN faculty188 f
+    ON d.DEPARTMENT_ID = f.UNDER_DEPT
+GROUP BY d.DEPARTMENT_ID, d.DNAME
+HAVING AVG(f.SALARY) >= 10000;
+
+
+select 
+        d.DEPARTMENT_ID,
+        d.DNAME,
+         avg(f.SALARY) as average_SALARY
+          from department188 d
+           join faculty188 f
+           on d.DEPARTMENT_ID = f.UNDER_DEPT
+     where d.DEPARTMENT_ID in (
+        select c.OFFERING_DEPT
+        from course188 c
+        where upper(c.CNAME) in ('BTECH','MTECH')
+    group by c.OFFERING_DEPT
+        having count(distinct upper(c.CNAME)) = 2
+)
+        group by  d.DEPARTMENT_ID ,d.DNAME 
+        having count(distinct f.EMP_ID) >= 2;
+
+
+--c
+ SELECT
+   d.DEPARTMENT_ID,
+    d.DNAME,
+     avg(f.SALARY) as average_SALARY
+FROM department188 d
+JOIN faculty188 f
+     on d.DEPARTMENT_ID = f.UNDER_DEPT
+WHERE d.DEPARTMENT_ID IN (
+    SELECT c.OFFERING_DEPT
+    FROM course188 c
+    WHERE UPPER(c.CNAME) IN ('BTECH', 'MTECH')
+    GROUP BY c.OFFERING_DEPT
+    HAVING COUNT(DISTINCT UPPER(c.CNAME)) = 2
+)
+GROUP BY  d.DEPARTMENT_ID,d.DNAME
+HAVING COUNT(
+    CASE
+        WHEN f.SALARY > (
+            SELECT AVG(f2.SALARY)
+            FROM faculty188 f2
+            WHERE f2.UNDER_DEPT = d.DEPARTMENT_ID
+        )
+        THEN 1
+    END
+) >= 2;
+
+--d
+SELECT
+    s.FACULTY_NAME,
+    s.SALARY,
+    s.EMP_ID
+FROM faculty188 s
+JOIN faculty188 f
+    ON f.SUPERVISOR = s.EMP_ID
+WHERE f.UNDER_DEPT = s.UNDER_DEPT
+GROUP BY s.FACULTY_NAME, s.SALARY, s.EMP_ID
+HAVING COUNT(DISTINCT f.EMP_ID) >= 2;
+
+SELECT
+    s.FACULTY_NAME,
+    s.SALARY,
+    s.EMP_ID
+FROM faculty188 s
+LEFT JOIN faculty188 f
+    ON f.SUPERVISOR = s.EMP_ID
+   AND f.UNDER_DEPT <> s.UNDER_DEPT
+GROUP BY s.FACULTY_NAME, s.SALARY, s.EMP_ID
+HAVING COUNT(DISTINCT f.EMP_ID) <= 2;
+
+
+SELECT
+    f.EMP_ID,
+    f.FACULTY_NAME,
+    f.SALARY
+FROM faculty188 f
+JOIN department188 d
+    ON d.HEAD_ID = f.EMP_ID
+WHERE d.DEPARTMENT_ID IN (
+    SELECT c.OFFERING_DEPT
+    FROM course188 c
+    WHERE UPPER(c.CNAME) IN ('BTECH', 'MTECH')
+    GROUP BY c.OFFERING_DEPT
+    HAVING COUNT(DISTINCT UPPER(c.CNAME)) = 1
+);
+
+--e(ii)
+SELECT
+   f.EMP_ID,
+    f.FACULTY_NAME,
+    f.SALARY
+FROM faculty188 f
+JOIN department188 d
+    ON d.HEAD_ID=f.EMP_ID
+WHERE d.DEPARTMENT_ID IN (
+    SELECT c.OFFERING_DEPT
+    FROM course188 c
+    GROUP BY c.OFFERING_DEPT
+    HAVING
+        SUM(CASE WHEN UPPER(c.CNAME) = 'BTECH'
+                 THEN 1 ELSE 0 END) >= 2
+        OR
+        SUM(CASE WHEN UPPER(c.CNAME) = 'MTECH'
+                 THEN 1 ELSE 0 END) >= 2
+);
+
+
+--e(iii) 
+SELECT
+   f.EMP_ID,
+    f.FACULTY_NAME,
+    f.SALARY
+FROM faculty188 f
+JOIN department188 d
+    ON d.HEAD_ID=f.EMP_ID
+WHERE d.DEPARTMENT_ID IN (
+    SELECT c.OFFERING_DEPT
+    FROM course188 c
+    JOIN contains188 co
+        ON c.CID = co.COURSE_ID
+    JOIN subjectpaper188 s
+        ON co.PAPER_ID = s.PAPER_CODE
+    WHERE LOWER(s.PAPER_NAME) LIKE '%machine%'
+);
+
+--f. 
+SELECT
+    st.ROLL,
+    st.SNAME,
+    st.ENROLLED_COURSE,
+    SUM(e.MARKS) AS aggregate_marks
+FROM student188 st
+JOIN course188 c
+    ON st.ENROLLED_COURSE = c.CID
+JOIN contains188 co
+    ON c.CID = co.COURSE_ID
+JOIN exam188 e
+    ON st.ROLL = e.PERFORMED_BY_STUDENT
+   AND co.PAPER_ID = e.PAPER_CODE
+WHERE UPPER(c.CNAME) = 'BTECH'
+  AND UPPER(c.DISCIPLINE) = 'CSE'
+  AND co.SEMESTER = 5
+  AND e.SESSIONS = EXTRACT(YEAR FROM SYSDATE)
+GROUP BY st.ROLL, st.SNAME, st.ENROLLED_COURSE;
+
+--g. 
+WITH student_total AS (
+    SELECT
+        c.CID,
+        c.CNAME,
+        c.DISCIPLINE,
+        co.SEMESTER,
+        e.SESSIONS,
+        st.ROLL,
+        st.SNAME,
+        SUM(e.MARKS) AS aggregate_MARKS
+    FROM course188 c
+    JOIN contains188 co
+        ON c.CID = co.COURSE_ID
+    JOIN exam188 e
+        ON co.PAPER_ID = e.PAPER_CODE
+    JOIN student188 st
+        ON e.PERFORMED_BY_STUDENT = st.ROLL
+       AND st.ENROLLED_COURSE = c.CID
+    WHERE co.SEMESTER = co.SEMESTER
+    GROUP BY
+        c.CID, c.CNAME, c.DISCIPLINE,
+        co.SEMESTER, e.SESSIONS,
+        st.ROLL, st.SNAME
+),
+ranked_students AS (
+    SELECT
+        student_total.*,
+        RANK() OVER (
+            PARTITION BY CID, SEMESTER, SESSIONS
+            ORDER BY aggregate_marks DESC
+        ) AS student_rank
+    FROM student_total
+)
+SELECT
+    CID,
+    CNAME,
+    DISCIPLINE,
+    SEMESTER,
+    SESSIONS,
+    ROLL,
+    SNAME,
+    aggregate_marks
+FROM ranked_students
+WHERE student_rank = 1;
+
+SELECT
+    FACULTY_NAME,
+   EMP_ID,
+    SALARY
+FROM (
+    SELECT
+        FACULTY_NAME,
+       EMP_ID,
+        SALARY,
+        DENSE_RANK() OVER (
+            ORDER BY SALARY DESC
+        ) AS SALARY_rank
+    FROM faculty188
+)
+WHERE SALARY_rank = 4;
+
+--I.
+SELECT
+    FACULTY_NAME,
+   EMP_ID,
+    SALARY,
+    SALARY_rank
+FROM (
+    SELECT
+        FACULTY_NAME,
+       EMP_ID,
+        SALARY,
+        DENSE_RANK() OVER (
+            ORDER BY SALARY DESC
+        ) AS SALARY_rank
+    FROM faculty188
+)
+WHERE SALARY_rank = 4
+
+UNION
+
+SELECT
+    FACULTY_NAME,
+   EMP_ID,
+    SALARY,
+    SALARY_rank
+FROM (
+    SELECT
+        FACULTY_NAME,
+       EMP_ID,
+        SALARY,
+        DENSE_RANK() OVER (
+            ORDER BY SALARY ASC
+        ) AS SALARY_rank
+    FROM faculty188
+)
+WHERE SALARY_rank = 4;
+
+--j.
+SELECT
+    DEPARTMENT_ID,
+   DNAME,
+    FACULTY_NAME,
+   EMP_ID,
+    SALARY
+FROM (
+    SELECT
+        d.DEPARTMENT_ID,
+        d.DNAME,
+        f.FACULTY_NAME,
+       f.EMP_ID,
+        f.SALARY,
+        DENSE_RANK() OVER (
+            PARTITION BY d.DEPARTMENT_ID
+            ORDER BY f.SALARY DESC
+        ) AS SALARY_rank
+    FROM department188 d
+    JOIN faculty188 f
+        ON d.DEPARTMENT_ID = f.UNDER_DEPT
+)
+WHERE SALARY_rank = 3;
+
+
+
+     
+
